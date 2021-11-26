@@ -4,6 +4,8 @@ from django.db import models
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes.fields import GenericForeignKey
 
+from utils import upload_function
+
 
 class Genre(models.Model):
     """Жанр"""
@@ -41,6 +43,7 @@ class Beatmaker(models.Model):
 
     name = models.CharField(max_length=100, verbose_name='Битмейкер')
     slug = models.SlugField()
+    image = models.ImageField(upload_to=upload_function, null=True, blank=True)
 
     def __str__(self):
         return self.name
@@ -58,12 +61,13 @@ class Beat(models.Model):
                                   blank=False,
                                   verbose_name='Битмейкер')
     title = models.CharField(max_length=255, verbose_name='Бит')
-    license = models.ManyToOneRel(LicenseType, related_name='beat')
-    genre = models.ManyToOneRel(Genre, related_name='beat')
+    license = models.ManyToManyField(LicenseType, verbose_name='Тип лицензии', related_name='license')
+    genre = models.ManyToManyField(Genre, verbose_name='Жанр', related_name='genre')
     release_date = models.DateField(verbose_name='Дата релиза')
     slug = models.SlugField
     price = models.DecimalField(max_digits=9, decimal_places=2, verbose_name='Цена')
-    discount = models.BooleanField(deafult=False, verbose_name='Скидка ')
+    discount = models.BooleanField(default=False, verbose_name='Скидка')
+    image = models.ImageField(upload_to=upload_function)
 
     def __str__(self):
         return f'{self.id} | {self.title} | {self.beatmaker}'
@@ -85,6 +89,7 @@ class Playlist(models.Model):
                                    verbose_name='Бит',
                                    related_name='playlist')
     slug = models.SlugField()
+    image = models.ImageField(upload_to=upload_function, null=True, blank=True)
 
     def __str__(self):
         return self.name
@@ -100,7 +105,7 @@ class CartProduct(models.Model):
     user = models.ForeignKey('Customer', verbose_name='Покупатель', on_delete=models.CASCADE)
     cart = models.ForeignKey('Cart', verbose_name='Корзина', on_delete=models.CASCADE)
     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
-    object_od = models.PositiveIntegerField()
+    object_id = models.PositiveIntegerField()
     content_object = GenericForeignKey('content_type', 'object_id')
 
     def __str__(self):
@@ -194,3 +199,20 @@ class Notification(models.Model):
     class Meta:
         verbose_name = 'Уведомеление'
         verbose_name_plural = 'Уведомеления'
+
+
+class ImageGallery(models.Model):
+    """Галерея изображений"""
+
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
+    object_id = models.PositiveIntegerField()
+    content_object = GenericForeignKey('content_type', 'object_id')
+    image = models.ImageField(upload_to=upload_function)
+    use_in_slider = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f'Изображение для {self.content_object}'
+
+    class Meta:
+        verbose_name = 'Галерея изображений'
+        verbose_name_plural = verbose_name
